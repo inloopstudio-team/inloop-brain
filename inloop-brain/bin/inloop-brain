@@ -1,0 +1,112 @@
+#!/usr/bin/env ruby
+
+# bin/inloop-brain - A command-line tool to interact with the Brain Access Kit API
+
+require 'optparse'
+require 'net/http'
+require 'uri'
+
+# Parse command line options
+options = {}
+parser = OptionParser.new do |opts|
+  opts.banner = "This is brain access kit of inloop.studio\n\n  Usage: inloop-brain [options]"
+  opts.on('-k KEY', '--key=KEY', 'Access key for the Brain Access Kit') do |key|
+    options[:key] = key
+  end
+  opts.on('-d', '--debug', 'Enable debug mode') do
+    options[:debug] = true
+  end
+  opts.on('-h', '--help', 'Display this help message') do
+    puts opts
+    exit
+  end
+end
+
+begin
+  parser.parse!
+rescue OptionParser::InvalidOption => e
+  STDERR.puts e.message
+  STDERR.puts parser
+  exit 1
+end
+
+# Validate required parameters
+unless options[:key]
+  STDERR.puts "Error: Missing required parameter 'key'"
+  STDERR.puts parser
+  exit 1
+end
+
+# Read input from STDIN
+input = STDIN.read.strip
+
+# Exit if no input provided
+if input.empty?
+  STDERR.puts "Error: No input provided via STDIN"
+  exit 1
+end
+
+# Configure the API request
+host = ENV['INLOOP_BRAIN_HOST'] || 'discovery.inloop.studio'
+protocol = ENV['INLOOP_BRAIN_PROTOCOL'] || 'https'
+endpoint = "/web_tools/brain_access_kit/#{options[:key]}/handle_prompt.txt"
+uri = URI.parse("#{protocol}://#{host}#{endpoint}")
+
+if options[:debug]
+  puts "Making request to: #{uri}"
+end
+
+# Setup the HTTP request
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = (uri.scheme == 'https')
+
+# Add proper timeout settings
+http.open_timeout = 10
+http.read_timeout = 60
+
+request = Net::HTTP::Post.new(uri.path)
+# Set proper headers
+request['Content-Type'] = 'application/x-www-form-urlencoded'
+request['Accept'] = 'text/plain'
+request['User-Agent'] = 'Inloop-Brain-CLI/0.0.1'
+
+# Set form data
+request.set_form_data('prompt' => input)
+
+# Send the request and handle the response
+begin
+  if options[:debug]
+    puts "Request headers:"
+    request.each_header { |key, value| puts "  #{key}: #{value}" }
+    puts "Request body: #{request.body}"
+  end
+  
+  response = http.request(request)
+  
+  if options[:debug]
+    puts "Response status: #{response.code}"
+    puts "Response headers:"
+    response.each_header { |key, value| puts "  #{key}: #{value}" }
+  end
+  
+  if response.code.to_i == 200
+    puts response.body
+  else
+    STDERR.puts "Error: API returned status code #{response.code}"
+    STDERR.puts response.body
+    
+    # Additional troubleshooting for 422 errors
+    if response.code.to_i == 422
+      STDERR.puts "\nThe 422 error typically indicates a validation problem. Possible issues:"
+      STDERR.puts "1. The endpoint format may have changed"
+      STDERR.puts "2. The access key format may be incorrect"
+      STDERR.puts "3. The prompt may be in an invalid format"
+      STDERR.puts "\nTry running with --debug for more information."
+    end
+    exit 1
+  end
+rescue => e
+  STDERR.puts "Error: Failed to connect to the API: #{e.message}"
+  STDERR.puts e.backtrace.join("\n") if options[:debug]
+  exit 1
+end

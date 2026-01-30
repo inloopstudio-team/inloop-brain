@@ -1,0 +1,5 @@
+INLOOP v0.1 License
+
+Copyright (c) 2025 Abhishek Parolkar & inloop.studio LP
+
+ALL RIGHTS RESERVED
