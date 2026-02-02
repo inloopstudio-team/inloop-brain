@@ -1,17 +1,27 @@
 #!/usr/bin/env ruby
 
-# bin/inloop-brain - A command-line tool to interact with the Brain Access Kit API
+# bin/inloop-brain - A command-line tool to interact with the Inloop Brain API (OpenAI-compatible)
 
 require 'optparse'
 require 'net/http'
 require 'uri'
+require 'json'
 
 # Parse command line options
 options = {}
 parser = OptionParser.new do |opts|
-  opts.banner = "This is brain access kit of inloop.studio\n\n  Usage: inloop-brain [options]"
-  opts.on('-k KEY', '--key=KEY', 'Access key for the Brain Access Kit') do |key|
+  opts.banner = "This is the Inloop Brain CLI\n\n  Usage: inloop-brain [options]"
+  opts.on('-k KEY', '--key=KEY', 'API key for the Inloop Brain (OpenAI-compatible)') do |key|
     options[:key] = key
+  end
+  opts.on('-m MODEL', '--model=MODEL', 'Model name (default: inloop-brain)') do |model|
+    options[:model] = model
+  end
+  opts.on('--system=TEXT', 'System prompt to prepend to the conversation') do |text|
+    options[:system] = text
+  end
+  opts.on('--api-url=URL', 'Override API URL (default: https://app.inloop.studio/api/v1/chat/completions)') do |url|
+    options[:api_url] = url
   end
   opts.on('-d', '--debug', 'Enable debug mode') do
     options[:debug] = true
@@ -31,8 +41,9 @@ rescue OptionParser::InvalidOption => e
 end
 
 # Validate required parameters
+options[:key] ||= ENV['INLOOP_BRAIN_API_KEY']
 unless options[:key]
-  STDERR.puts "Error: Missing required parameter 'key'"
+  STDERR.puts "Error: Missing required parameter 'key' (or set INLOOP_BRAIN_API_KEY)"
   STDERR.puts parser
   exit 1
 end
@@ -47,10 +58,13 @@ if input.empty?
 end
 
 # Configure the API request
-host = ENV['INLOOP_BRAIN_HOST'] || 'discovery.inloop.studio'
-protocol = ENV['INLOOP_BRAIN_PROTOCOL'] || 'https'
-endpoint = "/web_tools/brain_access_kit/#{options[:key]}/handle_prompt.txt"
-uri = URI.parse("#{protocol}://#{host}#{endpoint}")
+api_url = options[:api_url] || ENV['INLOOP_BRAIN_API_URL']
+if api_url.nil? || api_url.strip.empty?
+  host = ENV['INLOOP_BRAIN_HOST'] || 'app.inloop.studio'
+  protocol = ENV['INLOOP_BRAIN_PROTOCOL'] || 'https'
+  api_url = "#{protocol}://#{host}/api/v1/chat/completions"
+end
+uri = URI.parse(api_url)
 
 if options[:debug]
   puts "Making request to: #{uri}"
@@ -64,14 +78,21 @@ http.use_ssl = (uri.scheme == 'https')
 http.open_timeout = 10
 http.read_timeout = 60
 
-request = Net::HTTP::Post.new(uri.path)
+request = Net::HTTP::Post.new(uri)
 # Set proper headers
-request['Content-Type'] = 'application/x-www-form-urlencoded'
-request['Accept'] = 'text/plain'
-request['User-Agent'] = 'Inloop-Brain-CLI/0.0.1'
+request['Content-Type'] = 'application/json'
+request['Accept'] = 'application/json'
+request['Authorization'] = "Bearer #{options[:key]}"
+request['User-Agent'] = 'Inloop-Brain-CLI/0.0.9'
 
-# Set form data
-request.set_form_data('prompt' => input)
+messages = []
+messages << { role: 'system', content: options[:system] } if options[:system].to_s.strip != ''
+messages << { role: 'user', content: input }
+body = {
+  model: options[:model] || ENV['INLOOP_BRAIN_MODEL'] || 'inloop-brain',
+  messages: messages
+}
+request.body = JSON.dump(body)
 
 # Send the request and handle the response
 begin
@@ -89,20 +110,26 @@ begin
     response.each_header { |key, value| puts "  #{key}: #{value}" }
   end
   
+  begin
+    payload = JSON.parse(response.body.to_s)
+  rescue JSON::ParserError
+    payload = nil
+  end
+
   if response.code.to_i == 200
-    puts response.body
-  else
-    STDERR.puts "Error: API returned status code #{response.code}"
-    STDERR.puts response.body
-    
-    # Additional troubleshooting for 422 errors
-    if response.code.to_i == 422
-      STDERR.puts "\nThe 422 error typically indicates a validation problem. Possible issues:"
-      STDERR.puts "1. The endpoint format may have changed"
-      STDERR.puts "2. The access key format may be incorrect"
-      STDERR.puts "3. The prompt may be in an invalid format"
-      STDERR.puts "\nTry running with --debug for more information."
+    content = payload.dig("choices", 0, "message", "content") if payload
+    content ||= payload.dig("choices", 0, "text") if payload
+    if content
+      puts content
+    else
+      STDERR.puts "Error: Unexpected response format"
+      STDERR.puts response.body
+      exit 1
     end
+  else
+    message = payload.dig("error", "message") if payload
+    STDERR.puts "Error: API returned status code #{response.code}"
+    STDERR.puts(message || response.body)
     exit 1
   end
 rescue => e

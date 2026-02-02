@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "inloop-brain"
-  spec.version       = "0.0.8"
+  spec.version       = "0.0.9"
   spec.authors       = ["Abhishek Parolkar"]
   spec.email         = ["abhishek@inloop.studio"]
 
