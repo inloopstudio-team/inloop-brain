@@ -33,6 +33,7 @@ Use an API key generated from the Brain API share link in app.inloop.studio. The
 - `INLOOP_BRAIN_MODEL`: Model name to send (default: inloop-brain)
 - `INLOOP_BRAIN_HOST`: Host override (default: app.inloop.studio)
 - `INLOOP_BRAIN_PROTOCOL`: Protocol override (default: https)
+- `INLOOP_BRAIN_SSL_STRICT`: Set to `1` to enforce strict TLS verification (disables the default compatibility behavior that ignores missing certificate CRLs)
 
 ### Options
 
@@ -44,7 +45,7 @@ Use an API key generated from the Brain API share link in app.inloop.studio. The
 
 ### Dependencies
 
-- bundler (~> 2.0)
+- bundler (>= 2.0, < 5)
 - rake (~> 13.0)
 - rspec (~> 3.0)
 

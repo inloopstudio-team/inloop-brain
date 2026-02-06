@@ -2,10 +2,13 @@
 
 # bin/inloop-brain - A command-line tool to interact with the Inloop Brain API (OpenAI-compatible)
 
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+
 require 'optparse'
 require 'net/http'
 require 'uri'
 require 'json'
+require 'inloop_brain/ssl'
 
 # Parse command line options
 options = {}
@@ -74,6 +77,23 @@ end
 http = Net::HTTP.new(uri.host, uri.port)
 http.use_ssl = (uri.scheme == 'https')
 
+# Some environments enable CRL checking globally for TLS verification but do not
+# provide the CRLs, causing OpenSSL to abort with:
+#   "certificate verify failed (unable to get certificate CRL)"
+# We keep certificate verification enabled, but soft-fail only those CRL-missing
+# errors by default. Set INLOOP_BRAIN_SSL_STRICT=1 to disable this compatibility
+# behavior.
+if http.use_ssl?
+  http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+  http.verify_hostname = true if http.respond_to?(:verify_hostname=)
+
+  strict_ssl = ENV.fetch('INLOOP_BRAIN_SSL_STRICT', '').to_s.downcase
+  strict_ssl = %w[1 true yes].include?(strict_ssl)
+  unless strict_ssl
+    http.verify_callback = InloopBrain::SSL.allow_missing_crl_verify_callback(debug: options[:debug])
+  end
+end
+
 # Add proper timeout settings
 http.open_timeout = 10
 http.read_timeout = 60
@@ -83,7 +103,7 @@ request = Net::HTTP::Post.new(uri)
 request['Content-Type'] = 'application/json'
 request['Accept'] = 'application/json'
 request['Authorization'] = "Bearer #{options[:key]}"
-request['User-Agent'] = 'Inloop-Brain-CLI/0.0.9'
+request['User-Agent'] = 'Inloop-Brain-CLI/0.0.10'
 
 messages = []
 messages << { role: 'system', content: options[:system] } if options[:system].to_s.strip != ''
