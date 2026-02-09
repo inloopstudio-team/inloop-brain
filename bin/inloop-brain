@@ -103,7 +103,7 @@ request = Net::HTTP::Post.new(uri)
 request['Content-Type'] = 'application/json'
 request['Accept'] = 'application/json'
 request['Authorization'] = "Bearer #{options[:key]}"
-request['User-Agent'] = 'Inloop-Brain-CLI/0.0.10'
+request['User-Agent'] = 'Inloop-Brain-CLI/0.0.11'
 
 messages = []
 messages << { role: 'system', content: options[:system] } if options[:system].to_s.strip != ''
@@ -134,25 +134,40 @@ begin
     payload = JSON.parse(response.body.to_s)
   rescue JSON::ParserError
     payload = nil
-  end
+	  end
 
-  if response.code.to_i == 200
-    content = payload.dig("choices", 0, "message", "content") if payload
-    content ||= payload.dig("choices", 0, "text") if payload
-    if content
-      puts content
-    else
-      STDERR.puts "Error: Unexpected response format"
-      STDERR.puts response.body
-      exit 1
-    end
-  else
-    message = payload.dig("error", "message") if payload
-    STDERR.puts "Error: API returned status code #{response.code}"
-    STDERR.puts(message || response.body)
-    exit 1
-  end
-rescue => e
+	  if response.code.to_i == 200
+	    content = nil
+	    if payload.is_a?(Hash)
+	      content = payload.dig("choices", 0, "message", "content")
+	      content ||= payload.dig("choices", 0, "text")
+	      content ||= payload["content"]
+	      content ||= payload["message"]
+	      content ||= payload["text"]
+	    elsif payload.is_a?(String)
+	      content = payload
+	    end
+	    if content
+	      puts content
+	    else
+	      STDERR.puts "Error: Unexpected response format"
+	      STDERR.puts response.body.to_s
+	      exit 1
+	    end
+	  else
+	    message = nil
+	    if payload.is_a?(Hash)
+	      message = payload.dig("error", "message")
+	      message ||= payload["error"] if payload["error"].is_a?(String)
+	      message ||= payload["message"]
+	    elsif payload.is_a?(String)
+	      message = payload
+	    end
+	    STDERR.puts "Error: API returned status code #{response.code}"
+	    STDERR.puts(message || response.body.to_s)
+	    exit 1
+	  end
+	rescue => e
   STDERR.puts "Error: Failed to connect to the API: #{e.message}"
   STDERR.puts e.backtrace.join("\n") if options[:debug]
   exit 1
