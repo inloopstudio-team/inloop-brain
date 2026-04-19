@@ -8,7 +8,10 @@ require 'optparse'
 require 'net/http'
 require 'uri'
 require 'json'
+require 'dotenv'
 require 'inloop_brain/ssl'
+
+Dotenv.load
 
 # Parse command line options
 options = {}
@@ -23,7 +26,7 @@ parser = OptionParser.new do |opts|
   opts.on('--system=TEXT', 'System prompt to prepend to the conversation') do |text|
     options[:system] = text
   end
-  opts.on('--api-url=URL', 'Override API URL (default: https://app.inloop.studio/api/v1/chat/completions)') do |url|
+  opts.on('--api-url=URL', 'Override API URL (default: https://app.inloop.studio/v1/chat/completions)') do |url|
     options[:api_url] = url
   end
   opts.on('-d', '--debug', 'Enable debug mode') do
@@ -65,7 +68,7 @@ api_url = options[:api_url] || ENV['INLOOP_BRAIN_API_URL']
 if api_url.nil? || api_url.strip.empty?
   host = ENV['INLOOP_BRAIN_HOST'] || 'app.inloop.studio'
   protocol = ENV['INLOOP_BRAIN_PROTOCOL'] || 'https'
-  api_url = "#{protocol}://#{host}/api/v1/chat/completions"
+  api_url = "#{protocol}://#{host}/v1/chat/completions"
 end
 uri = URI.parse(api_url)
 
@@ -157,7 +160,7 @@ begin
 	  else
 	    message = nil
 	    if payload.is_a?(Hash)
-	      message = payload.dig("error", "message")
+	      message = payload.dig("error", "message") if payload["error"].is_a?(Hash)
 	      message ||= payload["error"] if payload["error"].is_a?(String)
 	      message ||= payload["message"]
 	    elsif payload.is_a?(String)

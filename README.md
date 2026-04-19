@@ -29,7 +29,7 @@ echo "What can you do?" | inloop-brain -k YOUR_API_KEY > output.txt
 Use an API key generated from the Brain API share link in app.inloop.studio. The API uses the published `llms.txt` context when available.
 
 - `INLOOP_BRAIN_API_KEY`: API key used for Authorization (recommended)
-- `INLOOP_BRAIN_API_URL`: Full API URL (default: https://app.inloop.studio/api/v1/chat/completions)
+- `INLOOP_BRAIN_API_URL`: Full API URL (default: https://app.inloop.studio/v1/chat/completions)
 - `INLOOP_BRAIN_MODEL`: Model name to send (default: inloop-brain)
 - `INLOOP_BRAIN_HOST`: Host override (default: app.inloop.studio)
 - `INLOOP_BRAIN_PROTOCOL`: Protocol override (default: https)
