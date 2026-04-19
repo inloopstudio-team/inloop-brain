@@ -41,6 +41,57 @@ Use an API key generated from the Brain API share link in app.inloop.studio. The
 - `--model`: Model name to send
 - `--system`: System prompt to prepend
 
+## Claude Code Plugin
+
+The inloop-brain gem ships as a **Claude Code plugin** with two built-in skills:
+
+| Skill | Trigger phrase | What it does |
+|-------|---------------|--------------|
+| `inloop-brain` | "ask inloop-brain", "what does the project brain say about…" | Queries your project-scoped Inloop Brain knowledge engine |
+| `inloop-llms` | "fetch llms.txt from…" | Fetches `llms.txt` from a public Inloop share link |
+
+### Install the plugin
+
+Inside a Claude Code session:
+
+```
+/plugin marketplace add https://github.com/inloopstudio-team/inloop-brain.git
+```
+
+Then activate:
+
+```
+/reload-plugins
+```
+
+### Configure your API key
+
+The `inloop-brain` skill resolves your API key in this order (first match wins):
+
+1. `.env` in your project root — `INLOOP_BRAIN_API_KEY=<key>`
+2. Shell environment — `export INLOOP_BRAIN_API_KEY=<key>`
+3. CLI flag — `inloop-brain -k <key>`
+
+Generate your API key from the Brain share link in [app.inloop.studio](https://app.inloop.studio).
+
+### Usage in Claude Code
+
+Once the plugin is active, ask naturally:
+
+```
+ask inloop-brain: what are the onboarding steps for a new client?
+```
+
+```
+what does the project brain say about our pricing model?
+```
+
+```
+use the project context to answer: who owns the delivery process?
+```
+
+Claude will invoke the `inloop-brain` CLI and return your firm's knowledge directly in the conversation.
+
 ## Development
 
 ### Dependencies
