@@ -1,41 +1,45 @@
 ---
 name: inloop-brain
-description: "Query Inloop Brain via app.inloop.studio's OpenAI-compatible API and return the assistant reply."
-license: "Nonstandard"
-compatibility: "Designed for Claude Code. Requires curl, python3, and network access."
-allowed-tools: "Bash(curl:*) Bash(python3:*)"
+description: "Queries the Inloop Brain, a project-aware AI assistant that answers questions using the current project's llms.txt knowledge base, via the inloop-brain CLI. Use when the user says 'ask inloop-brain', 'what does the project brain say about', 'use the project context to answer', or when a question should be answered from project-specific knowledge rather than general training data."
+allowed-tools: "Bash(inloop-brain:*) Bash(echo:*) Bash(curl:*)"
 metadata:
   author: "inloop.studio"
-  version: "0.1.1"
+  version: "0.3.0"
 ---
 
-# Inloop Brain (Public API)
+# Inloop Brain
 
-Use this skill to query an Inloop Brain via the OpenAI-compatible API at `https://app.inloop.studio/api/v1/chat/completions`.
-See `references/api.md` for request/response examples.
+Queries the current project's Inloop Brain — an AI endpoint pre-loaded with the project's `llms.txt` knowledge context.
 
-## Requirements
+## Quick start
 
-- `INLOOP_BRAIN_API_KEY` must be set in the environment.
-- Optional overrides:
-  - `INLOOP_BRAIN_API_URL`
-  - `INLOOP_BRAIN_MODEL`
-  - `INLOOP_BRAIN_SYSTEM`
-
-## How to run
-
-Run the script with the user prompt as arguments. If no arguments are provided, read from stdin.
-
+```bash
+echo "Your question here" | inloop-brain
 ```
-Bash
-scripts/inloop-ask.sh $ARGUMENTS
+
+With a system prompt:
+
+```bash
+echo "Your question" | inloop-brain --system="Be concise."
 ```
+
+## API key
+
+The key is resolved in this order (first match wins):
+
+1. `.env` in the current directory — `INLOOP_BRAIN_API_KEY=<key>` (auto-loaded)
+2. Shell env — `export INLOOP_BRAIN_API_KEY=<key>`
+3. CLI flag — `inloop-brain -k <key>`
+
+If no key is found, tell the user: _"Set INLOOP_BRAIN_API_KEY in your .env or environment and retry."_
+Never print or log the key.
 
 ## Output
 
-Return the assistant content from the API response. If the API returns an error, surface the error message.
+Print the assistant reply verbatim. On API error, surface the error message and stop — do not retry 4xx responses.
 
-## Safety
+## Reference
 
-- Never print or store the API key.
-- Do not fabricate answers; always return the API response.
+- Environment variables and overrides → [references/env-vars.md](references/env-vars.md)
+- API request/response format → [references/api.md](references/api.md)
+- Curl fallback (when gem is not installed) → [references/curl-fallback.md](references/curl-fallback.md)

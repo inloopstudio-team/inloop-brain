@@ -1,26 +1,31 @@
 # Inloop Brain API
 
-Endpoint:
+## Endpoint
 
-- `POST https://app.inloop.studio/api/v1/chat/completions`
+`POST https://app.inloop.studio/v1/chat/completions`
 
-Headers:
+## Headers
 
-- `Authorization: Bearer <INLOOP_BRAIN_API_KEY>`
-- `Content-Type: application/json`
+```
+Authorization: Bearer <INLOOP_BRAIN_API_KEY>
+Content-Type: application/json
+```
 
-Payload example:
+## Request body
 
 ```json
 {
   "model": "inloop-brain",
   "messages": [
-    {"role": "user", "content": "Summarize the outcomes."}
+    {"role": "system", "content": "Optional system prompt"},
+    {"role": "user", "content": "Your question"}
   ]
 }
 ```
 
-Response example:
+The `system` message is optional. The `model` field must be `"inloop-brain"`.
+
+## Successful response (200)
 
 ```json
 {
@@ -37,3 +42,13 @@ Response example:
   ]
 }
 ```
+
+Extract the reply from: `choices[0].message.content`
+
+## Error response (4xx)
+
+```json
+{"error": "message describing what went wrong"}
+```
+
+Do not retry on 4xx. Surface the error message to the user.
