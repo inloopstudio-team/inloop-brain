@@ -1,0 +1,14 @@
+{
+  "name": "inloop-brain",
+  "description": "Queries the Inloop Brain — a project-scoped AI knowledge engine built by inloop.studio. Adds the /inloop-brain skill for answering questions from your firm's captured intelligence.",
+  "version": "0.3.0",
+  "author": {
+    "name": "inloop.studio",
+    "email": "help@inloop.studio"
+  },
+  "homepage": "https://inloop.studio",
+  "repository": "https://github.com/inloopstudio-team/inloop-brain",
+  "license": "Nonstandard",
+  "keywords": ["inloop", "knowledge", "brain", "ai", "project-context"],
+  "skills": "./skills"
+}

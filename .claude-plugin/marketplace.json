@@ -1,0 +1,31 @@
+{
+  "name": "inloop-brain-marketplace",
+  "owner": {
+    "name": "inloop.studio",
+    "email": "help@inloop.studio"
+  },
+  "metadata": {
+    "description": "Official inloop.studio plugin marketplace — tools for querying project-scoped AI knowledge engines.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "inloop-brain",
+      "source": {
+        "source": "github",
+        "repo": "inloopstudio-team/inloop-brain"
+      },
+      "description": "Queries the Inloop Brain — a project-scoped AI knowledge engine built by inloop.studio. Adds the /inloop-brain skill for answering questions from your firm's captured intelligence.",
+      "version": "0.3.0",
+      "author": {
+        "name": "inloop.studio",
+        "email": "help@inloop.studio"
+      },
+      "homepage": "https://inloop.studio",
+      "repository": "https://github.com/inloopstudio-team/inloop-brain",
+      "license": "Nonstandard",
+      "keywords": ["inloop", "knowledge", "brain", "ai", "project-context"],
+      "category": "productivity"
+    }
+  ]
+}
