@@ -2,9 +2,9 @@
 
 Gem::Specification.new do |spec|
   spec.name          = "inloop-brain"
-  spec.version       = "0.0.11"
+  spec.version       = "0.0.12"
   spec.authors       = ["Abhishek Parolkar"]
-  spec.email         = ["abhishek@inloop.studio"]
+  spec.email         = ["abhishek@parolkar.com"]
 
   spec.summary       = "Command-line interface for the Inloop Brain Access Kit"
   spec.description   = "A simple command-line tool that sends prompts to the Inloop Brain Access Kit API and returns responses"
